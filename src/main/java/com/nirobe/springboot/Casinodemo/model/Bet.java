@@ -14,10 +14,10 @@ public class Bet {
     private long id;
     private long gameId;
     private long userId;
-    private String colorBet;
-    private int number;
-    private long amount;
-    private long returnAmount;
+    private String betColor;
+    private int betNumber;
+    private long betAmount;
+    private long returnBetAmount;
     
     public Bet() {
 
@@ -25,11 +25,11 @@ public class Bet {
     
     public Bet(long gameId, long userId, String colorBet, int number, long amount) {
         this.gameId = gameId;
-        this.userId = userId;
-        this.colorBet = colorBet;
-        this.number = number;       
-        this.amount = amount;       
-        this.setAmountReturn(0);
+        this.setUserId(userId);
+        this.betColor = colorBet;
+        this.betNumber = number;       
+        this.betAmount = amount;       
+        this.betAmount = 0;
     }   
     
     @Id
@@ -51,9 +51,44 @@ public class Bet {
 		this.gameId = gameId;
 	}
 
+    @Column(name = "bet_color", nullable = false)
+	public String getBetColor() {
+		return betColor;
+	}
+
+	public void setBetColor(String betColor) {
+		this.betColor = betColor;
+	}
+
+    @Column(name = "bet_number", nullable = false)
+	public int getBetNumber() {
+		return betNumber;
+	}
+
+	public void setBetNumber(int betNumber) {
+		this.betNumber = betNumber;
+	}
+
+    @Column(name = "bet_amount", nullable = false)
+	public long getBetAmount() {
+		return betAmount;
+	}
+
+	public void setBetAmount(long betAmount) {
+		this.betAmount = betAmount;
+	}
+
+    @Column(name = "return_bet_amount", nullable = false)
+	public long getReturnBetAmount() {
+		return returnBetAmount;
+	}
+
+	public void setReturnBetAmount(long returnBetAmount) {
+		this.returnBetAmount = returnBetAmount;
+	}
+
     @Column(name = "user_id", nullable = false)
 	public long getUserId() {
-    	
 		return userId;
 	}
 
@@ -61,45 +96,5 @@ public class Bet {
 		this.userId = userId;
 	}
 
-    @Column(name = "color_bet", nullable = true)
-	public String getColorBet() {
-    	
-		return colorBet;
-	}
-
-	public void setColorBet(String colorBet) {
-		this.colorBet = colorBet;
-	}
-
-    @Column(name = "numbet_bet", nullable = true)
-	public int getNumberBet() {
-    	
-		return number;
-	}
-
-	public void setNumberBet(int numberBet) {
-		this.number = numberBet;
-	}
-	
-    @Column(name = "amount", nullable = false)
-	public long getAmountBet() {
-    	
-		return amount;
-	}
-
-	public void setAmount(long amount) {
-		this.amount = amount;
-	}
-
-    @Column(name = "return_amount", nullable = false)
-	public long getReturnAmount() {
-		
-		return returnAmount;
-	}
-
-	public void setAmountReturn(long amountReturn) {
-		this.returnAmount = amountReturn;
-	}
-  
     
 }

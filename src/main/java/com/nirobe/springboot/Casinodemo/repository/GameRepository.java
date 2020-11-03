@@ -8,4 +8,5 @@ import com.nirobe.springboot.Casinodemo.model.Game;
 @Repository
 public interface GameRepository extends JpaRepository<Game, Long>{
 
+
 }

@@ -9,4 +9,5 @@ import com.nirobe.springboot.Casinodemo.model.Bet;
 @Repository
 public interface BetRepository  extends JpaRepository<Bet, Long>{
 
+	
 }

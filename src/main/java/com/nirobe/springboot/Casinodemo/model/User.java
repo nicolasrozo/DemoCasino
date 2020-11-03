@@ -15,6 +15,10 @@ public class User {
     private long id;
     private long credit;
     
+    public User() {
+    	
+    }
+    
     public User(long credit) {
     	this.setCredit(credit);
     }

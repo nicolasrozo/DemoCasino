@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nirobe.springboot.Casinodemo.business.RouletteLogic;
+import com.nirobe.springboot.Casinodemo.business.BetLogic;
 import com.nirobe.springboot.Casinodemo.exception.ErrorTypeException;
 import com.nirobe.springboot.Casinodemo.exception.ResourceNotFoundException;
 import com.nirobe.springboot.Casinodemo.model.Bet;
@@ -22,6 +22,11 @@ import com.nirobe.springboot.Casinodemo.repository.BetRepository;
 import com.nirobe.springboot.Casinodemo.repository.GameRepository;
 import com.nirobe.springboot.Casinodemo.repository.RouletteRepository;
 import com.nirobe.springboot.Casinodemo.repository.UserRepository;
+import com.nirobe.springboot.Casinodemo.service.BetService;
+import com.nirobe.springboot.Casinodemo.service.GameServiceImpl;
+import com.nirobe.springboot.Casinodemo.service.RouletteService;
+import com.nirobe.springboot.Casinodemo.service.UserService;
+import com.nirobe.springboot.Casinodemo.service.UserServiceImpl;
 
 
 @RestController
@@ -29,84 +34,76 @@ import com.nirobe.springboot.Casinodemo.repository.UserRepository;
 public class RouletteController {
 
     @Autowired
-    private RouletteRepository rouletteRepository;
+    private RouletteService rouletteService;
 	@Autowired
-	private UserRepository userRepository;
+	private UserServiceImpl userService;;
     @Autowired
-    private GameRepository gameRepository;
+    private GameServiceImpl gameService;
     @Autowired
-    private BetRepository betRepository;  
+    private BetService betService;  
     
 	@PostMapping("/roulettes")
     public long createRoulette() {
-		Roulette roulette = new Roulette();
 		
-        return rouletteRepository.save(roulette).getId();
+        return rouletteService.save();
     }
 
 	@GetMapping("/open/{id}")
-	public String String(@PathVariable(value = "id") long rouletteId)  
-			throws ResourceNotFoundException  {
-		
-        Roulette roulette = rouletteRepository.findById(rouletteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Operacion Denegada"));
+	public String String(@PathVariable(value = "id") long rouletteId) throws ResourceNotFoundException{
+		Roulette roulette = rouletteService.findById(rouletteId);
         if(!roulette.isActive()) {
-            Game game = new Game(roulette.getId());
-            long idGame = gameRepository.save(game).getId();
-            roulette.setActive(true);
-            roulette.setIdActiveGame(idGame);
-            rouletteRepository.save(roulette);       	
+            gameService.save(roulette.getId());     	
         }
         
         return "Operacion exitosa";
 	}
 	
 	@PostMapping("/bet/{id}")
-	public Bet betRoulette(@PathVariable(value = "id") Long rouletteId, @RequestParam String amountBet,  
-			@RequestParam String typeBet, @RequestHeader("idUsuario") long userId)
-			throws ResourceNotFoundException {
-		long betAmount = 0;
+	public Bet betRoulette(@PathVariable(value = "id") long rouletteId, @RequestParam(value = "amountBet") String amountBet,  
+			@RequestParam(value = "typeBet") String typeBet, @RequestHeader("idUsuario") long userId)
+			throws ResourceNotFoundException, ErrorTypeException {
 		
-		// validacion ruleta
-		Roulette roulette = rouletteRepository.findById(rouletteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Numero de ruleta no encontrada"));
+		long betAmount = 0;
+		Roulette roulette = rouletteService.findById(rouletteId);
 		if(!roulette.isActive()) 
 			new ResourceNotFoundException("Ruleta no abierta");
-		
-	    //validaciones apuesta
 		try {
 	        betAmount = Long.parseLong(amountBet);
-	        if(!RouletteLogic.isValidBetAmount(betAmount)) {
+	        if(!betService.isValidBetAmount(betAmount)) {
 	        	new ResourceNotFoundException("El monto apostado sobre pasa el maximo monto para apostar");
 	        }
 	    } catch (Exception e) {
 	    	new ErrorTypeException("No se ingreso un numero de monto para apostar");
 	    }
-        if(!RouletteLogic.isTypeBetAccepted(typeBet)) {
+        if(!betService.isTypeBetAccepted(typeBet)) {
         	new ResourceNotFoundException("Error en el tipo de apuesta ingresado");
         }
-        
-        //usuario
-		User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Id de usuario no valido"));       
-        if(user.getCredit()<betAmount) {
+		User user = userService.findById(userId);
+		if(user.getCredit()<betAmount) {
         	new ErrorTypeException("El valor apostado es menor al credito disponible");
         }
-        
-        //operaciones repositorios
-        user.setCredit(user.getCredit()-betAmount);
-        userRepository.save(user);
-        	
-        Bet bet = new Bet(roulette.getIdActiveGame(), user.getId(), RouletteLogic.getColor(typeBet), RouletteLogic.getNumber(typeBet), betAmount);
-        return betRepository.save(bet);
-        
-	}		
+		userService.updateUserCredit(user, betAmount);
+		
+		return betService.save(roulette.getIdActiveGame(), user.getId(), typeBet, typeBet, betAmount);
+	}	
 	
+	
+	@PostMapping("/close/{id}")
+	public List<Bet> betRoulette(@PathVariable(value = "id") Long rouletteId) 
+			throws ResourceNotFoundException {
+		Roulette roulette = rouletteService.findById(rouletteId);
+		if(!roulette.isActive()) 
+			new ResourceNotFoundException("Ruleta no abierta");
+		Game game = gameService.close(roulette);
+		rouletteService.close(roulette);
+		return betService.close(game);
+		
+	}
 	
 	@GetMapping("/roulettes")
-	public List <Roulette> getRouletteBets() {
+	public List<Roulette> getRouletteBets() {
 		
-		return rouletteRepository.findAll();	
+		return rouletteService.findAll();	
 	}	
 	
 }
